@@ -13,6 +13,12 @@ public enum Currency {
     RUB,
     //Australian Dollars
     AUD,
-    //Turkish Lira
-    TRY
+    //British Pound
+    GBP,
+    //New Zealand
+    NZD,
+    //Switzerland Currency
+    CHF,
+    //Japanese Yen
+    JPY
 }
