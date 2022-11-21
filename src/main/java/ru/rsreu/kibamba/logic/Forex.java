@@ -22,14 +22,9 @@ public class Forex {
 
     public void addOrder(Order order) {
         synchronized (order.getCurrencyPair()) {
-            List<Order> orderCandidates = orders.get(order.getCurrencyPair()).stream()
-                    .filter(orderCandidate -> filterByClient(order, orderCandidate))
-                    .filter(orderCandidate -> filterByType(order, orderCandidate))
-                    .filter(orderCandidate -> filterByPrice(order, orderCandidate))
-                    .sorted((order1, order2) -> compareOrdersForSorting(order1, order2, order))
-                    .collect(Collectors.toList());
-
-            orderCandidates.forEach(orderCandidate -> {
+            List<Order> clientOrders = orders.get(order.getCurrencyPair())
+                    .stream().collect(Collectors.toList());
+            clientOrders.forEach(orderCandidate -> {
                 BigDecimal dealAmount = orderCandidate.getAmount().min(order.getAmount());
                 BigDecimal dealPrice = getDealPrice(order, orderCandidate);
 

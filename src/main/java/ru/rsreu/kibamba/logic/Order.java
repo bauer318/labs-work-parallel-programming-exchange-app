@@ -24,26 +24,26 @@ public class Order {
         this.price = price.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
     }
     private void initOrderBuy(Client client, CurrencyPairs currencyPair,BigDecimal amount, BigDecimal price){
-        BigDecimal currentClientBalanceToCurrency = client.getBalance().get(currencyPair.getToCurrency());
+        BigDecimal currentClientBalanceToCurrency = client.getBalance().get(currencyPair.getRightCurrency());
         BigDecimal amountNeededFromCurrency = price.multiply(amount).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
         if (amountNeededFromCurrency.compareTo(currentClientBalanceToCurrency) > 0) {
             this.orderStatus = OrderStatus.CANCELED;
             throw new InsufficientBalance(String.format("Cannot create order. Needed at least %s %s. Client %s has only %s",
-                    amountNeededFromCurrency, currencyPair.getToCurrency(), client.getId(), currentClientBalanceToCurrency));
+                    amountNeededFromCurrency, currencyPair.getRightCurrency(), client.getId(), currentClientBalanceToCurrency));
         }
-        client.withdraw(currencyPair.getToCurrency(), amountNeededFromCurrency);
+        client.withdraw(currencyPair.getRightCurrency(), amountNeededFromCurrency);
         this.deposit = amountNeededFromCurrency.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
         this.orderStatus = OrderStatus.DONE;
     }
     private void initOrderSel(Client client, CurrencyPairs currencyPair,BigDecimal amount){
-        BigDecimal currentClientBalanceFromCurrency = client.getBalance().get(currencyPair.getFromCurrency());
+        BigDecimal currentClientBalanceFromCurrency = client.getBalance().get(currencyPair.getLeftCurrency());
         BigDecimal amountNeededToCurrency = amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
         if (amountNeededToCurrency.compareTo(currentClientBalanceFromCurrency) > 0) {
             this.orderStatus = OrderStatus.CANCELED;
             throw new InsufficientBalance(String.format("Cannot create order. Needed at least %s %s. Client %s has only %s",
-                    amountNeededToCurrency, currencyPair.getFromCurrency(), client.getId(), currentClientBalanceFromCurrency));
+                    amountNeededToCurrency, currencyPair.getLeftCurrency(), client.getId(), currentClientBalanceFromCurrency));
         }
-        client.withdraw(currencyPair.getFromCurrency(), amountNeededToCurrency);
+        client.withdraw(currencyPair.getLeftCurrency(), amountNeededToCurrency);
         this.deposit = BigDecimal.ZERO;
         this.orderStatus = OrderStatus.DONE;
     }
@@ -53,7 +53,6 @@ public class Order {
                 initOrderBuy(client,currencyPair,amount,price);
                 break;
             }
-
             case SELL: {
                 initOrderSel(client,currencyPair,amount);
                 break;
@@ -65,38 +64,34 @@ public class Order {
         if (this.amount.compareTo(amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE)) < 0) {
             throw new InsufficientBalance(String.format("Cannot withdraw order for %s. Current amount is %s", amount, this.amount));
         }
-
         BigDecimal newAmount = this.amount.subtract(amount).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
         this.amount = newAmount;
-
         BigDecimal dealPrice = amount.multiply(price).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-
         switch (orderType) {
             case BUY: {
-                client.deposit(currencyPair.getFromCurrency(), amount);
+                client.deposit(currencyPair.getLeftCurrency(), amount);
                 BigDecimal newDeposit = deposit.subtract(dealPrice);
                 this.deposit = newDeposit;
                 break;
             }
             case SELL: {
-                client.deposit(currencyPair.getToCurrency(), dealPrice);
+                client.deposit(currencyPair.getRightCurrency(), dealPrice);
                 break;
             }
         }
     }
-
     public void revoke() {
         switch (orderType) {
             case BUY: {
                 if (deposit.compareTo(BigDecimal.ZERO) > 0) {
-                    client.deposit(currencyPair.getToCurrency(), deposit);
+                    client.deposit(currencyPair.getRightCurrency(), deposit);
                     this.deposit = BigDecimal.ZERO;
                 }
                 break;
             }
             case SELL: {
                 if (amount.compareTo(BigDecimal.ZERO) > 0) {
-                    client.deposit(currencyPair.getFromCurrency(), amount);
+                    client.deposit(currencyPair.getLeftCurrency(), amount);
                 }
                 break;
             }

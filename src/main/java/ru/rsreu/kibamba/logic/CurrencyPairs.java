@@ -14,19 +14,19 @@ public enum CurrencyPairs {
     USD_RUB(Currency.USD,Currency.RUB),
     EUR_RUB(Currency.EUR,Currency.RUB),
     USD_EUR(Currency.USD,Currency.EUR);
-    private final Currency fromCurrency;
-    private final Currency toCurrency;
+    private final Currency leftCurrency;
+    private final Currency rightCurrency;
 
-    CurrencyPairs(Currency fromCurrency, Currency toCurrency){
-        this.fromCurrency = fromCurrency;
-        this.toCurrency = toCurrency;
+    CurrencyPairs(Currency leftCurrency, Currency rightCurrency){
+        this.leftCurrency = leftCurrency;
+        this.rightCurrency = rightCurrency;
     }
 
-    public Currency getFromCurrency() {
-        return fromCurrency;
+    public Currency getLeftCurrency() {
+        return leftCurrency;
     }
 
-    public Currency getToCurrency() {
-        return toCurrency;
+    public Currency getRightCurrency() {
+        return rightCurrency;
     }
 }
