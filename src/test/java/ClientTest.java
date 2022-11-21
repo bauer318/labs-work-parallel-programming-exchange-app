@@ -1,9 +1,9 @@
 import org.junit.Assert;
 import org.junit.Test;
-import ru.rsreu.kibamba.exception.NotEnoughMoneyException;
-import ru.rsreu.kibamba.model.Client;
-import ru.rsreu.kibamba.model.Currency;
-import ru.rsreu.kibamba.worker.CurrencyWorker;
+import ru.rsreu.kibamba.exception.InsufficientBalance;
+import ru.rsreu.kibamba.logic.Client;
+import ru.rsreu.kibamba.logic.Currency;
+import ru.rsreu.kibamba.logic.CurrencyWorker;
 
 
 import java.math.BigDecimal;
@@ -47,7 +47,7 @@ public class ClientTest {
     public void deposit400EURThenWithdraw401Test() {
         Client client = new Client(1);
         client.deposit(Currency.EUR, new BigDecimal(400));
-        Assert.assertThrows(NotEnoughMoneyException.class, () -> {
+        Assert.assertThrows(InsufficientBalance.class, () -> {
             client.withdraw(Currency.EUR, new BigDecimal(401));
         });
     }
@@ -55,7 +55,7 @@ public class ClientTest {
     @Test
     public void createClientThenWithdraw1CentTest() {
         Client client = new Client(1);
-        Assert.assertThrows(NotEnoughMoneyException.class, () -> {
+        Assert.assertThrows(InsufficientBalance.class, () -> {
             client.withdraw(Currency.USD, new BigDecimal(0.01));
         });
     }

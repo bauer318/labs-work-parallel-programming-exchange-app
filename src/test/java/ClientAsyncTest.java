@@ -1,7 +1,7 @@
 import org.junit.Assert;
 import org.junit.jupiter.api.RepeatedTest;
-import ru.rsreu.kibamba.model.Client;
-import ru.rsreu.kibamba.model.Currency;
+import ru.rsreu.kibamba.logic.Client;
+import ru.rsreu.kibamba.logic.Currency;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

@@ -1,6 +1,6 @@
 import org.junit.Assert;
 import org.junit.jupiter.api.RepeatedTest;
-import ru.rsreu.kibamba.model.*;
+import ru.rsreu.kibamba.logic.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -9,7 +9,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class OrderAsyncTest {
 
-    @RepeatedTest(50)
+    @RepeatedTest(1)
     public void createManyOrdersFromOneClientTest() {
 
         Client client = new Client(1);
@@ -20,7 +20,7 @@ public class OrderAsyncTest {
         Runnable createOrderTask = () -> {
             try {
                 countDownLatch.await();
-                Order order = new Order(client, CurrencyPairs.EUR_TO_USD, OrderType.SELL, new BigDecimal(1000), new BigDecimal(2));
+                Order order = new Order(client, CurrencyPairs.EUR_USD, OrderType.SELL, new BigDecimal(1000), new BigDecimal(2));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

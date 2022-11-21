@@ -1,8 +1,8 @@
 import org.junit.Assert;
 import org.junit.Test;
-import ru.rsreu.kibamba.exception.NotEnoughMoneyException;
-import ru.rsreu.kibamba.model.*;
-import ru.rsreu.kibamba.worker.CurrencyWorker;
+import ru.rsreu.kibamba.exception.InsufficientBalance;
+import ru.rsreu.kibamba.logic.*;
+import ru.rsreu.kibamba.logic.CurrencyWorker;
 
 import java.math.BigDecimal;
 
@@ -12,7 +12,7 @@ public class OrderTest {
     public void createPossibleOrderBuyTest() {
         Client client = new Client(1);
         client.deposit(Currency.RUB, new BigDecimal(1000));
-        Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
+        Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
         Assert.assertEquals(0, client.getBalance().get(Currency.RUB).compareTo(new BigDecimal(400)));
     }
 
@@ -20,7 +20,7 @@ public class OrderTest {
     public void createPossibleOrderSellTest() {
         Client client = new Client(1);
         client.deposit(Currency.USD, new BigDecimal(300));
-        Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.SELL, new BigDecimal(300), new BigDecimal(65));
+        Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(300), new BigDecimal(65));
         Assert.assertEquals(0, client.getBalance().get(Currency.USD).compareTo(BigDecimal.ZERO));
     }
 
@@ -28,8 +28,8 @@ public class OrderTest {
     public void createImpossibleOrderBuyTest() {
         Client client = new Client(1);
         client.deposit(Currency.RUB, new BigDecimal(1000));
-        Assert.assertThrows(NotEnoughMoneyException.class, () -> {
-            Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.BUY, new BigDecimal(200), new BigDecimal(63.50));
+        Assert.assertThrows(InsufficientBalance.class, () -> {
+            Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(200), new BigDecimal(63.50));
         });
     }
 
@@ -37,8 +37,8 @@ public class OrderTest {
     public void createImpossibleOrderSellTest() {
         Client client = new Client(1);
         client.deposit(Currency.USD, new BigDecimal(399.99));
-        Assert.assertThrows(NotEnoughMoneyException.class, () -> {
-            Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.SELL, new BigDecimal(400), new BigDecimal(61.50));
+        Assert.assertThrows(InsufficientBalance.class, () -> {
+            Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(400), new BigDecimal(61.50));
         });
     }
 
@@ -46,7 +46,7 @@ public class OrderTest {
     public void reduceOrderPossibleTest() {
         Client client = new Client(1);
         client.deposit(Currency.RUB, new BigDecimal(1000));
-        Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
+        Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
         order.reduce(new BigDecimal(4.78), order.getPrice());
         Assert.assertEquals(0, order.getAmount()
                 .compareTo(new BigDecimal(5.22)
@@ -60,8 +60,8 @@ public class OrderTest {
     public void reduceOrderImpossibleTest() {
         Client client = new Client(1);
         client.deposit(Currency.RUB, new BigDecimal(1000));
-        Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
-        Assert.assertThrows(NotEnoughMoneyException.class, () -> {
+        Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
+        Assert.assertThrows(InsufficientBalance.class, () -> {
            order.reduce(new BigDecimal(10.01), order.getPrice());
         });
     }
@@ -70,7 +70,7 @@ public class OrderTest {
     public void revokeOrderBuyTest() {
         Client client = new Client(1);
         client.deposit(Currency.RUB, new BigDecimal(1000));
-        Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
+        Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
         order.revoke();
         Assert.assertEquals(0, client.getBalance().get(Currency.RUB).compareTo(new BigDecimal(1000)));
     }
@@ -79,7 +79,7 @@ public class OrderTest {
     public void revokeOrderSellTest() {
         Client client = new Client(1);
         client.deposit(Currency.USD, new BigDecimal(300));
-        Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.SELL, new BigDecimal(300), new BigDecimal(65));
+        Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(300), new BigDecimal(65));
         order.revoke();
         Assert.assertEquals(0, client.getBalance().get(Currency.USD).compareTo(new BigDecimal(300)));
     }
@@ -88,7 +88,7 @@ public class OrderTest {
     public void reduceOrderThenRevokeTest() {
         Client client = new Client(1);
         client.deposit(Currency.RUB, new BigDecimal(1000));
-        Order order = new Order(client, CurrencyPairs.USD_TO_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
+        Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(60));
         order.reduce(new BigDecimal(5), order.getPrice());
         Assert.assertEquals(0, client.getBalance().get(Currency.USD).compareTo(new BigDecimal(5)));
         order.revoke();

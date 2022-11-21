@@ -1,4 +1,4 @@
-package ru.rsreu.kibamba.worker;
+package ru.rsreu.kibamba.logic;
 
 import java.math.RoundingMode;
 

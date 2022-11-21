@@ -1,8 +1,6 @@
-package ru.rsreu.kibamba.stockmarket;
+package ru.rsreu.kibamba.logic;
 
-import ru.rsreu.kibamba.exception.UnsupportedOrderTypeException;
-import ru.rsreu.kibamba.model.CurrencyPairs;
-import ru.rsreu.kibamba.model.Order;
+import ru.rsreu.kibamba.exception.IncompatibleOrder;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -11,11 +9,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class StockMarket {
+public class Forex {
 
     private final Map<CurrencyPairs, List<Order>> orders;
 
-    public StockMarket() {
+    public Forex() {
         this.orders = new ConcurrentHashMap<>(CurrencyPairs.values().length);
         for (CurrencyPairs currencyPair : CurrencyPairs.values()) {
             orders.put(currencyPair, new ArrayList<>());
@@ -77,7 +75,7 @@ public class StockMarket {
                 return orderTarget.getPrice().compareTo(orderCandidate.getPrice()) <= 0;
             }
             default: {
-                throw new UnsupportedOrderTypeException();
+                throw new IncompatibleOrder();
             }
         }
     }
@@ -91,7 +89,7 @@ public class StockMarket {
                 return (-1) * order1.getPrice().compareTo(order2.getPrice());
             }
             default: {
-                throw new UnsupportedOrderTypeException();
+                throw new IncompatibleOrder();
             }
         }
     }
@@ -105,7 +103,7 @@ public class StockMarket {
                 return orderTarget.getPrice().max(orderCandidate.getPrice());
             }
             default: {
-                throw new UnsupportedOrderTypeException();
+                throw new IncompatibleOrder();
             }
         }
     }

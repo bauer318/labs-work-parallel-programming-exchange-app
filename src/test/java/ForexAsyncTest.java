@@ -1,8 +1,8 @@
 import org.junit.Assert;
 import org.junit.jupiter.api.RepeatedTest;
-import ru.rsreu.kibamba.model.*;
-import ru.rsreu.kibamba.stockmarket.StockMarket;
-import ru.rsreu.kibamba.worker.CurrencyWorker;
+import ru.rsreu.kibamba.logic.*;
+import ru.rsreu.kibamba.logic.Forex;
+import ru.rsreu.kibamba.logic.CurrencyWorker;
 
 
 import java.math.BigDecimal;
@@ -11,21 +11,21 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
-public class StockMarketAsyncTest {
+public class ForexAsyncTest {
 
-    @RepeatedTest(50)
+    @RepeatedTest(1)
     public void createTwoMatchingOrdersTest() {
-        StockMarket stockMarket = new StockMarket();
+        Forex forex = new Forex();
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Client client1 = new Client(1);
         client1.deposit(Currency.RUB, new BigDecimal(1000));
-        Order order1 = new Order(client1, CurrencyPairs.USD_TO_RUB, OrderType.BUY, new BigDecimal(15), new BigDecimal(66.66));
+        Order order1 = new Order(client1, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(15), new BigDecimal(66.66));
 
         Runnable postOrder1 = () -> {
             try {
                 countDownLatch.await();
-                stockMarket.addOrder(order1);
+                forex.addOrder(order1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -34,12 +34,12 @@ public class StockMarketAsyncTest {
 
         Client client2 = new Client(2);
         client2.deposit(Currency.USD,  new BigDecimal(15));
-        Order order2 = new Order(client2, CurrencyPairs.USD_TO_RUB, OrderType.SELL, new BigDecimal(15), new BigDecimal(65));
+        Order order2 = new Order(client2, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(15), new BigDecimal(65));
 
         Runnable postOrder2 = () -> {
             try {
                 countDownLatch.await();
-                stockMarket.addOrder(order2);
+                forex.addOrder(order2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -58,7 +58,7 @@ public class StockMarketAsyncTest {
             e.printStackTrace();
         }
 
-        Assert.assertEquals(0, stockMarket.getAllOrdersList().size());
+        Assert.assertEquals(0, forex.getAllOrdersList().size());
         Assert.assertEquals(0, client1.getBalance().get(Currency.RUB)
                         .add(client2.getBalance().get(Currency.RUB))
                         .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE)
@@ -72,16 +72,16 @@ public class StockMarketAsyncTest {
 
     @RepeatedTest(50)
     public void createThreeMatchingOrdersTest() {
-        StockMarket stockMarket = new StockMarket();
+        Forex forex = new Forex();
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Client client1 = new Client(1);
         client1.deposit(Currency.USD, new BigDecimal(15));
-        Order order1 = new Order(client1, CurrencyPairs.USD_TO_RUB, OrderType.SELL, new BigDecimal(15), new BigDecimal(65));
+        Order order1 = new Order(client1, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(15), new BigDecimal(65));
         Runnable postOrder1 = () -> {
             try {
                 countDownLatch.await();
-                stockMarket.addOrder(order1);
+                forex.addOrder(order1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -90,11 +90,11 @@ public class StockMarketAsyncTest {
 
         Client client2 = new Client(2);
         client2.deposit(Currency.USD, new BigDecimal(25));
-        Order order2 = new Order(client2, CurrencyPairs.USD_TO_RUB, OrderType.SELL, new BigDecimal(25), new BigDecimal(70));
+        Order order2 = new Order(client2, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(25), new BigDecimal(70));
         Runnable postOrder2 = () -> {
             try {
                 countDownLatch.await();
-                stockMarket.addOrder(order2);
+                forex.addOrder(order2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -103,11 +103,11 @@ public class StockMarketAsyncTest {
 
         Client client3 = new Client(3);
         client3.deposit(Currency.RUB, new BigDecimal(10_000));
-        Order order3 = new Order(client3, CurrencyPairs.USD_TO_RUB, OrderType.BUY, new BigDecimal(40), new BigDecimal(80));
+        Order order3 = new Order(client3, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(40), new BigDecimal(80));
         Runnable postOrder3 = () -> {
             try {
                 countDownLatch.await();
-                stockMarket.addOrder(order3);
+                forex.addOrder(order3);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -128,7 +128,7 @@ public class StockMarketAsyncTest {
             e.printStackTrace();
         }
 
-        Assert.assertEquals(0, stockMarket.getAllOrdersList().size());
+        Assert.assertEquals(0, forex.getAllOrdersList().size());
         Assert.assertEquals(0, client3.getBalance().get(Currency.USD).compareTo(new BigDecimal(40)));
 
         BigDecimal rublesSum = client1.getBalance().get(Currency.RUB)
@@ -141,16 +141,16 @@ public class StockMarketAsyncTest {
 
     @RepeatedTest(50)
     public void createTwoNonMatchingOrdersThenRevokeAllTest() {
-        StockMarket stockMarket = new StockMarket();
+        Forex forex = new Forex();
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Client client1 = new Client(1);
         client1.deposit(Currency.USD, new BigDecimal(15));
-        Order order1 = new Order(client1, CurrencyPairs.USD_TO_RUB, OrderType.SELL, new BigDecimal(15), new BigDecimal(65));
+        Order order1 = new Order(client1, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(15), new BigDecimal(65));
         Runnable postOrder1 = () -> {
             try {
                 countDownLatch.await();
-                stockMarket.addOrder(order1);
+                forex.addOrder(order1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -159,11 +159,11 @@ public class StockMarketAsyncTest {
 
         Client client2 = new Client(2);
         client2.deposit(Currency.USD, new BigDecimal(25));
-        Order order2 = new Order(client2, CurrencyPairs.USD_TO_RUB, OrderType.SELL, new BigDecimal(25), new BigDecimal(70));
+        Order order2 = new Order(client2, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(25), new BigDecimal(70));
         Runnable postOrder2 = () -> {
             try {
                 countDownLatch.await();
-                stockMarket.addOrder(order2);
+                forex.addOrder(order2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -182,9 +182,9 @@ public class StockMarketAsyncTest {
             e.printStackTrace();
         }
 
-        stockMarket.revokeAllOrders();
+        forex.revokeAllOrders();
 
-        Assert.assertEquals(0, stockMarket.getAllOrdersList().size());
+        Assert.assertEquals(0, forex.getAllOrdersList().size());
         Assert.assertEquals(0, client1.getBalance().get(Currency.USD).compareTo(new BigDecimal(15)));
         Assert.assertEquals(0, client2.getBalance().get(Currency.USD).compareTo(new BigDecimal(25)));
 
@@ -192,7 +192,7 @@ public class StockMarketAsyncTest {
 
     @RepeatedTest(50)
     public void createManyRandomOrdersAndCheckSumsTest() {
-        StockMarket stockMarket = new StockMarket();
+        Forex stockMarket = new Forex();
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         List<Client> clients = new ArrayList<>();
@@ -219,15 +219,15 @@ public class StockMarketAsyncTest {
             CurrencyPairs currencyPair;
             switch (new Random().nextInt(3)) {
                 case 0: {
-                    currencyPair = CurrencyPairs.USD_TO_EUR;
+                    currencyPair = CurrencyPairs.USD_EUR;
                     break;
                 }
                 case 1: {
-                    currencyPair = CurrencyPairs.USD_TO_RUB;
+                    currencyPair = CurrencyPairs.USD_RUB;
                     break;
                 }
                 case 2: {
-                    currencyPair = CurrencyPairs.EUR_TO_RUB;
+                    currencyPair = CurrencyPairs.EUR_RUB;
                     break;
                 }
                 default: {
