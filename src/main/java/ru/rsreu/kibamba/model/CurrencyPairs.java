@@ -11,7 +11,9 @@ public enum CurrencyPairs {
     AUD_TO_CAD(Currency.AUD,Currency.CAD),
     GBP_TO_CHF(Currency.GBP,Currency.CHF),
     RUB_TO_CNY(Currency.RUB, Currency.CNY),
-    USD_TO_RUB(Currency.USD,Currency.RUB);
+    USD_TO_RUB(Currency.USD,Currency.RUB),
+    EUR_TO_RUB(Currency.EUR,Currency.RUB),
+    USD_TO_EUR(Currency.USD,Currency.EUR);
     private final Currency fromCurrency;
     private final Currency toCurrency;
 
