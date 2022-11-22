@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Assertions;
 import  org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.RepeatedTest;
 import ru.rsreu.kibamba.exception.InsufficientBalance;
-import ru.rsreu.kibamba.logic.Client;
-import ru.rsreu.kibamba.logic.Currency;
-import ru.rsreu.kibamba.logic.CurrencyPairs;
+import ru.rsreu.kibamba.logic.client.Client;
+import ru.rsreu.kibamba.logic.currency.Currency;
+import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -20,30 +20,30 @@ public class TestClient {
     public void testBuyRUBWithUSD(){
         Client buyer = new Client(1);
         BigDecimal amountDeposit = new BigDecimal(300);
-        BigDecimal amountBuy = new BigDecimal(50);
-        BigDecimal priceUSDToRUB = new BigDecimal("62.44");
+        BigDecimal amountBuy = new BigDecimal(3000);
+        BigDecimal priceRUBToUSD = new BigDecimal("0.01");
         buyer.deposit(Currency.USD,amountDeposit);
         Assertions.assertEquals(0, buyer.getBalance().get(Currency.USD).compareTo(amountDeposit));
         Assertions.assertEquals(0, buyer.getBalance().get(Currency.RUB).compareTo(BigDecimal.ZERO));
-        buyer.buy(CurrencyPairs.USD_RUB,amountBuy,priceUSDToRUB);
-        Assertions.assertEquals(0, buyer.getBalance().get(Currency.RUB).compareTo(new BigDecimal(3122)));
-        Assertions.assertEquals(0, buyer.getBalance().get(Currency.USD).compareTo(new BigDecimal(250)));
+        buyer.buy(CurrencyPairs.USD_RUB,amountBuy,priceRUBToUSD);
+        Assertions.assertEquals(0, buyer.getBalance().get(Currency.RUB).compareTo(amountBuy));
+        Assertions.assertEquals(0, buyer.getBalance().get(Currency.USD).compareTo(new BigDecimal(270)));
     }
 
     @Test
-    public void testSelUSDWithRUB(){
+    public void testSelUSDGetRUB(){
         Client seller = new Client(1);
-        BigDecimal amountDepositUSD = new BigDecimal(250);
-        BigDecimal amountDepositRUB = new BigDecimal(3122);
-        BigDecimal amountSold = new BigDecimal(2000);
-        BigDecimal priceRUBToUSD = new BigDecimal("0.02");
+        BigDecimal amountDepositUSD = new BigDecimal(270);
+        BigDecimal amountDepositRUB = new BigDecimal(3000);
+        BigDecimal amountSold = new BigDecimal(70);
+        BigDecimal priceUSDToRUB = new BigDecimal(62);
         seller.deposit(Currency.USD,amountDepositUSD);
         seller.deposit(Currency.RUB,amountDepositRUB);
         Assertions.assertEquals(0, seller.getBalance().get(Currency.USD).compareTo(amountDepositUSD));
         Assertions.assertEquals(0, seller.getBalance().get(Currency.RUB).compareTo(amountDepositRUB));
-        seller.sel(CurrencyPairs.USD_RUB,amountSold,priceRUBToUSD);
-        Assertions.assertEquals(0, seller.getBalance().get(Currency.RUB).compareTo(new BigDecimal(1122)));
-        Assertions.assertEquals(0, seller.getBalance().get(Currency.USD).compareTo(new BigDecimal(290)));
+        seller.sel(CurrencyPairs.USD_RUB,amountSold,priceUSDToRUB);
+        Assertions.assertEquals(0, seller.getBalance().get(Currency.RUB).compareTo(new BigDecimal(7340)));
+        Assertions.assertEquals(0, seller.getBalance().get(Currency.USD).compareTo(new BigDecimal(200)));
     }
 
     @Test

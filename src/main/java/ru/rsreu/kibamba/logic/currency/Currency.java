@@ -1,4 +1,4 @@
-package ru.rsreu.kibamba.logic;
+package ru.rsreu.kibamba.logic.currency;
 
 public enum Currency {
     //Chinese Yuan

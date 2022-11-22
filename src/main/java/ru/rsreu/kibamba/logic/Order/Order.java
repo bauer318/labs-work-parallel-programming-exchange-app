@@ -1,6 +1,9 @@
-package ru.rsreu.kibamba.logic;
+package ru.rsreu.kibamba.logic.Order;
 
 import ru.rsreu.kibamba.exception.InsufficientBalance;
+import ru.rsreu.kibamba.logic.client.Client;
+import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
+import ru.rsreu.kibamba.logic.currency.CurrencyWorker;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -15,37 +18,38 @@ public class Order {
     private final BigDecimal price;
 
     public Order(Client client, CurrencyPairs currencyPair, OrderType orderType, BigDecimal amount, BigDecimal price) {
-        initOrder(client,currencyPair,orderType,amount,price);
         this.client = client;
         this.currencyPair = currencyPair;
         this.orderType = orderType;
-        this.orderStatus = OrderStatus.REQUEST;
+        this.orderStatus = OrderStatus.REQUESTED;
         this.amount = amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
         this.price = price.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
+        initOrder(client,currencyPair,orderType,amount,price);
     }
     private void initOrderBuy(Client client, CurrencyPairs currencyPair,BigDecimal amount, BigDecimal price){
+        //BigDecimal leftCurrencyBalance =
         BigDecimal currentClientBalanceToCurrency = client.getBalance().get(currencyPair.getRightCurrency());
         BigDecimal amountNeededFromCurrency = price.multiply(amount).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
         if (amountNeededFromCurrency.compareTo(currentClientBalanceToCurrency) > 0) {
-            this.orderStatus = OrderStatus.CANCELED;
+            this.orderStatus = OrderStatus.REJECTED;
             throw new InsufficientBalance(String.format("Cannot create order. Needed at least %s %s. Client %s has only %s",
                     amountNeededFromCurrency, currencyPair.getRightCurrency(), client.getId(), currentClientBalanceToCurrency));
         }
         client.withdraw(currencyPair.getRightCurrency(), amountNeededFromCurrency);
         this.deposit = amountNeededFromCurrency.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-        this.orderStatus = OrderStatus.DONE;
+        this.orderStatus = OrderStatus.OPENED;
     }
     private void initOrderSel(Client client, CurrencyPairs currencyPair,BigDecimal amount){
         BigDecimal currentClientBalanceFromCurrency = client.getBalance().get(currencyPair.getLeftCurrency());
         BigDecimal amountNeededToCurrency = amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
         if (amountNeededToCurrency.compareTo(currentClientBalanceFromCurrency) > 0) {
-            this.orderStatus = OrderStatus.CANCELED;
+            this.orderStatus = OrderStatus.REJECTED;
             throw new InsufficientBalance(String.format("Cannot create order. Needed at least %s %s. Client %s has only %s",
                     amountNeededToCurrency, currencyPair.getLeftCurrency(), client.getId(), currentClientBalanceFromCurrency));
         }
         client.withdraw(currencyPair.getLeftCurrency(), amountNeededToCurrency);
         this.deposit = BigDecimal.ZERO;
-        this.orderStatus = OrderStatus.DONE;
+        this.orderStatus = OrderStatus.OPENED;
     }
     private void initOrder(Client client, CurrencyPairs currencyPair, OrderType orderType, BigDecimal amount, BigDecimal price){
         switch (orderType) {

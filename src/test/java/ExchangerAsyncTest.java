@@ -1,8 +1,12 @@
 import org.junit.Assert;
 import org.junit.jupiter.api.RepeatedTest;
-import ru.rsreu.kibamba.logic.*;
-import ru.rsreu.kibamba.logic.Forex;
-import ru.rsreu.kibamba.logic.CurrencyWorker;
+import ru.rsreu.kibamba.logic.Exchanger;
+import ru.rsreu.kibamba.logic.Order.Order;
+import ru.rsreu.kibamba.logic.Order.OrderType;
+import ru.rsreu.kibamba.logic.currency.Currency;
+import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
+import ru.rsreu.kibamba.logic.currency.CurrencyWorker;
+import ru.rsreu.kibamba.logic.client.Client;
 
 
 import java.math.BigDecimal;
@@ -11,11 +15,11 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
-public class ForexAsyncTest {
+public class ExchangerAsyncTest {
 
     @RepeatedTest(1)
     public void createTwoMatchingOrdersTest() {
-        Forex forex = new Forex();
+        Exchanger exchanger = new Exchanger();
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Client client1 = new Client(1);
@@ -25,7 +29,7 @@ public class ForexAsyncTest {
         Runnable postOrder1 = () -> {
             try {
                 countDownLatch.await();
-                forex.addOrder(order1);
+                exchanger.addOrder(order1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -39,7 +43,7 @@ public class ForexAsyncTest {
         Runnable postOrder2 = () -> {
             try {
                 countDownLatch.await();
-                forex.addOrder(order2);
+                exchanger.addOrder(order2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -58,7 +62,7 @@ public class ForexAsyncTest {
             e.printStackTrace();
         }
 
-        Assert.assertEquals(0, forex.getAllOrdersList().size());
+        Assert.assertEquals(0, exchanger.getAllOrdersList().size());
         Assert.assertEquals(0, client1.getBalance().get(Currency.RUB)
                         .add(client2.getBalance().get(Currency.RUB))
                         .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE)
@@ -72,7 +76,7 @@ public class ForexAsyncTest {
 
     @RepeatedTest(50)
     public void createThreeMatchingOrdersTest() {
-        Forex forex = new Forex();
+        Exchanger exchanger = new Exchanger();
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Client client1 = new Client(1);
@@ -81,7 +85,7 @@ public class ForexAsyncTest {
         Runnable postOrder1 = () -> {
             try {
                 countDownLatch.await();
-                forex.addOrder(order1);
+                exchanger.addOrder(order1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -94,7 +98,7 @@ public class ForexAsyncTest {
         Runnable postOrder2 = () -> {
             try {
                 countDownLatch.await();
-                forex.addOrder(order2);
+                exchanger.addOrder(order2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -107,7 +111,7 @@ public class ForexAsyncTest {
         Runnable postOrder3 = () -> {
             try {
                 countDownLatch.await();
-                forex.addOrder(order3);
+                exchanger.addOrder(order3);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -128,7 +132,7 @@ public class ForexAsyncTest {
             e.printStackTrace();
         }
 
-        Assert.assertEquals(0, forex.getAllOrdersList().size());
+        Assert.assertEquals(0, exchanger.getAllOrdersList().size());
         Assert.assertEquals(0, client3.getBalance().get(Currency.USD).compareTo(new BigDecimal(40)));
 
         BigDecimal rublesSum = client1.getBalance().get(Currency.RUB)
@@ -141,7 +145,7 @@ public class ForexAsyncTest {
 
     @RepeatedTest(50)
     public void createTwoNonMatchingOrdersThenRevokeAllTest() {
-        Forex forex = new Forex();
+        Exchanger exchanger = new Exchanger();
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         Client client1 = new Client(1);
@@ -150,7 +154,7 @@ public class ForexAsyncTest {
         Runnable postOrder1 = () -> {
             try {
                 countDownLatch.await();
-                forex.addOrder(order1);
+                exchanger.addOrder(order1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -163,7 +167,7 @@ public class ForexAsyncTest {
         Runnable postOrder2 = () -> {
             try {
                 countDownLatch.await();
-                forex.addOrder(order2);
+                exchanger.addOrder(order2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -182,9 +186,9 @@ public class ForexAsyncTest {
             e.printStackTrace();
         }
 
-        forex.revokeAllOrders();
+        exchanger.revokeAllOrders();
 
-        Assert.assertEquals(0, forex.getAllOrdersList().size());
+        Assert.assertEquals(0, exchanger.getAllOrdersList().size());
         Assert.assertEquals(0, client1.getBalance().get(Currency.USD).compareTo(new BigDecimal(15)));
         Assert.assertEquals(0, client2.getBalance().get(Currency.USD).compareTo(new BigDecimal(25)));
 
@@ -192,7 +196,7 @@ public class ForexAsyncTest {
 
     @RepeatedTest(50)
     public void createManyRandomOrdersAndCheckSumsTest() {
-        Forex stockMarket = new Forex();
+        Exchanger stockMarket = new Exchanger();
         CountDownLatch countDownLatch = new CountDownLatch(1);
 
         List<Client> clients = new ArrayList<>();

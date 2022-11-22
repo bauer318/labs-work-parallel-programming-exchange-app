@@ -1,6 +1,10 @@
 import org.junit.Assert;
 import org.junit.jupiter.api.RepeatedTest;
-import ru.rsreu.kibamba.logic.*;
+import ru.rsreu.kibamba.logic.Order.Order;
+import ru.rsreu.kibamba.logic.Order.OrderType;
+import ru.rsreu.kibamba.logic.client.Client;
+import ru.rsreu.kibamba.logic.currency.Currency;
+import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

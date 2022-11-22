@@ -1,6 +1,8 @@
 package ru.rsreu.kibamba.logic;
 
 import ru.rsreu.kibamba.exception.IncompatibleOrder;
+import ru.rsreu.kibamba.logic.Order.Order;
+import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -9,11 +11,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class Forex {
+public class Exchanger {
 
     private final Map<CurrencyPairs, List<Order>> orders;
 
-    public Forex() {
+    public Exchanger() {
         this.orders = new ConcurrentHashMap<>(CurrencyPairs.values().length);
         for (CurrencyPairs currencyPair : CurrencyPairs.values()) {
             orders.put(currencyPair, new ArrayList<>());

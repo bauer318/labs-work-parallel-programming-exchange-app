@@ -1,8 +1,12 @@
 import org.junit.Assert;
 import org.junit.Test;
 import ru.rsreu.kibamba.exception.InsufficientBalance;
-import ru.rsreu.kibamba.logic.*;
-import ru.rsreu.kibamba.logic.CurrencyWorker;
+import ru.rsreu.kibamba.logic.Order.Order;
+import ru.rsreu.kibamba.logic.Order.OrderType;
+import ru.rsreu.kibamba.logic.currency.Currency;
+import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
+import ru.rsreu.kibamba.logic.currency.CurrencyWorker;
+import ru.rsreu.kibamba.logic.client.Client;
 
 import java.math.BigDecimal;
 

@@ -1,7 +1,11 @@
 package ru.rsreu.kibamba;
 
-import ru.rsreu.kibamba.logic.*;
-import ru.rsreu.kibamba.logic.Forex;
+import ru.rsreu.kibamba.logic.Exchanger;
+import ru.rsreu.kibamba.logic.Order.Order;
+import ru.rsreu.kibamba.logic.Order.OrderType;
+import ru.rsreu.kibamba.logic.client.Client;
+import ru.rsreu.kibamba.logic.currency.Currency;
+import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
 
 import java.math.BigDecimal;
 
@@ -11,9 +15,9 @@ public class Runner {
         client.deposit(Currency.RUB, new BigDecimal(1000.62));
         Order order = new Order(client, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(10), new BigDecimal(61.50));
 
-        Forex forex = new Forex();
-        forex.addOrder(order);
+        Exchanger exchanger = new Exchanger();
+        exchanger.addOrder(order);
 
-        forex.getAllOrdersList().forEach(ord -> System.out.println(ord.getPrice()));
+        exchanger.getAllOrdersList().forEach(ord -> System.out.println(ord.getPrice()));
     }
 }

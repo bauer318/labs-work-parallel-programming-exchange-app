@@ -1,6 +1,10 @@
-package ru.rsreu.kibamba.logic;
+package ru.rsreu.kibamba.logic.client;
 
 import ru.rsreu.kibamba.exception.InsufficientBalance;
+import ru.rsreu.kibamba.logic.currency.Currency;
+import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
+import ru.rsreu.kibamba.logic.currency.CurrencyWorker;
+
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,21 +21,24 @@ public class Client {
     private Map<Currency, BigDecimal> initBalance(){
         Map<Currency, BigDecimal> balance = new ConcurrentHashMap<>(Currency.values().length);
         for (Currency currency : Currency.values()) {
-            balance.put(currency, new BigDecimal(BigDecimal.ZERO.doubleValue())
+            balance.put(currency, BigDecimal.valueOf(BigDecimal.ZERO.doubleValue())
                     .setScale(CurrencyWorker.CURRENCY_SCALE,CurrencyWorker.CURRENCY_ROUNDING_MODE));
         }
         return balance;
     }
     synchronized public void deposit(Currency currency, BigDecimal amount) {
         BigDecimal currentBalance = balance.get(currency);
-        BigDecimal newBalance = currentBalance.add(amount).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
+        BigDecimal newBalance = currentBalance.add(amount)
+                .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
         balance.put(currency, newBalance);
     }
 
     synchronized public void withdraw(Currency currency, BigDecimal amount){
             BigDecimal currentBalance = balance.get(currency);
-            if (currentBalance.compareTo(amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE)) == -1) {
-                throw new InsufficientBalance(String.format("Dear client %s your current balance %s is insufficient to make the withdrawal of %s currency %s ",
+            if (currentBalance
+                    .compareTo(amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE)) < 0) {
+                throw new InsufficientBalance(
+                        String.format("Dear client %s your current balance %s is insufficient to make the withdrawal of %s currency %s ",
                         this.getId(),
                         currentBalance,
                         amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE),
@@ -41,27 +48,27 @@ public class Client {
             balance.put(currency, restBalance);
     }
 
-    synchronized public void buy(CurrencyPairs currencyPairs, BigDecimal amount,BigDecimal price){
+    synchronized public void buy(CurrencyPairs currencyPairs, BigDecimal amount, BigDecimal priceRightLeftCurrency){
             BigDecimal leftCurrencyBalance = balance.get(currencyPairs.getLeftCurrency());
-            BigDecimal newLeftCurrencyBalance = leftCurrencyBalance.subtract(amount)
+            BigDecimal leftCurrencyAmountPaid = amount.multiply(priceRightLeftCurrency)
+                    .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
+            BigDecimal newLeftCurrencyBalance = leftCurrencyBalance.subtract(leftCurrencyAmountPaid)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
             BigDecimal rightBalance = balance.get((currencyPairs.getRightCurrency()));
-            BigDecimal amountPurchasedRightCurrency = amount.multiply(price)
-                    .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            BigDecimal newRightCurrencyBalance = rightBalance.add(amountPurchasedRightCurrency)
+            BigDecimal newRightCurrencyBalance = rightBalance.add(amount)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
             balance.put(currencyPairs.getRightCurrency(),newRightCurrencyBalance);
             balance.put(currencyPairs.getLeftCurrency(),newLeftCurrencyBalance);
 
     }
-    synchronized public void sel(CurrencyPairs currencyPairs, BigDecimal amount, BigDecimal price){
-            BigDecimal rightCurrencyBalance = balance.get(currencyPairs.getRightCurrency());
-            BigDecimal newRightCurrencyBalance = rightCurrencyBalance.subtract(amount)
-                    .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
+    synchronized public void sel(CurrencyPairs currencyPairs, BigDecimal amount, BigDecimal priceLeftRightCurrency){
             BigDecimal leftCurrencyBalance = balance.get(currencyPairs.getLeftCurrency());
-            BigDecimal amountSoldLeftCurrency = amount.multiply(price)
+            BigDecimal newLeftCurrencyBalance = leftCurrencyBalance.subtract(amount)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            BigDecimal newLeftCurrencyBalance = leftCurrencyBalance.add(amountSoldLeftCurrency)
+            BigDecimal rightCurrencyBalance = balance.get(currencyPairs.getRightCurrency());
+            BigDecimal rightCurrencyAmountPaid = amount.multiply(priceLeftRightCurrency)
+                    .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
+            BigDecimal newRightCurrencyBalance = rightCurrencyBalance.add(rightCurrencyAmountPaid)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
             balance.put(currencyPairs.getRightCurrency(),newRightCurrencyBalance);
             balance.put(currencyPairs.getLeftCurrency(),newLeftCurrencyBalance);
