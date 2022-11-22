@@ -13,7 +13,9 @@ public enum CurrencyPairs {
     RUB_CNY(Currency.RUB, Currency.CNY),
     USD_RUB(Currency.USD,Currency.RUB),
     EUR_RUB(Currency.EUR,Currency.RUB),
-    USD_EUR(Currency.USD,Currency.EUR);
+    USD_EUR(Currency.USD,Currency.EUR),
+    USD_AUD(Currency.USD,Currency.AUD),
+    CHF_USD(Currency.CHF,Currency.USD);
     private final Currency leftCurrency;
     private final Currency rightCurrency;
 

@@ -27,29 +27,29 @@ public class Order {
         initOrder(client,currencyPair,orderType,amount,price);
     }
     private void initOrderBuy(Client client, CurrencyPairs currencyPair,BigDecimal amount, BigDecimal price){
-        //BigDecimal leftCurrencyBalance =
-        BigDecimal currentClientBalanceToCurrency = client.getBalance().get(currencyPair.getRightCurrency());
-        BigDecimal amountNeededFromCurrency = price.multiply(amount).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-        if (amountNeededFromCurrency.compareTo(currentClientBalanceToCurrency) > 0) {
-            this.orderStatus = OrderStatus.REJECTED;
+        BigDecimal leftCurrencyBalance = client.getBalance().get(currencyPair.getLeftCurrency());
+        BigDecimal amountCanBePurchased = leftCurrencyBalance.multiply(price)
+                .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
+        BigDecimal amountPurchased = amount.divide(price,
+                CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
+        if (amountCanBePurchased.compareTo(amount
+                .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE)) >= 0) {
+            this.orderStatus = OrderStatus.OPENED;
+        }else{
             throw new InsufficientBalance(String.format("Cannot create order. Needed at least %s %s. Client %s has only %s",
-                    amountNeededFromCurrency, currencyPair.getRightCurrency(), client.getId(), currentClientBalanceToCurrency));
+                    amountPurchased, currencyPair.getLeftCurrency(), client.getId(), leftCurrencyBalance));
         }
-        client.withdraw(currencyPair.getRightCurrency(), amountNeededFromCurrency);
-        this.deposit = amountNeededFromCurrency.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-        this.orderStatus = OrderStatus.OPENED;
     }
     private void initOrderSel(Client client, CurrencyPairs currencyPair,BigDecimal amount){
-        BigDecimal currentClientBalanceFromCurrency = client.getBalance().get(currencyPair.getLeftCurrency());
-        BigDecimal amountNeededToCurrency = amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-        if (amountNeededToCurrency.compareTo(currentClientBalanceFromCurrency) > 0) {
-            this.orderStatus = OrderStatus.REJECTED;
+        BigDecimal rightCurrencyBalance = client.getBalance().get(currencyPair.getRightCurrency());
+        BigDecimal rightCurrencyAmountToSold = amount
+                .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
+        if(rightCurrencyBalance.compareTo(rightCurrencyAmountToSold) >= 0){
+            this.orderStatus = OrderStatus.OPENED;
+        }else{
             throw new InsufficientBalance(String.format("Cannot create order. Needed at least %s %s. Client %s has only %s",
-                    amountNeededToCurrency, currencyPair.getLeftCurrency(), client.getId(), currentClientBalanceFromCurrency));
+                    rightCurrencyAmountToSold, currencyPair.getLeftCurrency(), client.getId(), rightCurrencyBalance));
         }
-        client.withdraw(currencyPair.getLeftCurrency(), amountNeededToCurrency);
-        this.deposit = BigDecimal.ZERO;
-        this.orderStatus = OrderStatus.OPENED;
     }
     private void initOrder(Client client, CurrencyPairs currencyPair, OrderType orderType, BigDecimal amount, BigDecimal price){
         switch (orderType) {
@@ -62,6 +62,27 @@ public class Order {
                 break;
             }
         }
+    }
+
+    public boolean compatibleWith(Order targetOrder){
+        boolean isCompatiblePrice = false;
+        switch (targetOrder.getOrderType()){
+            case BUY: {
+                if(this.getPrice().compareTo(targetOrder.getPrice())<=0){
+                    isCompatiblePrice = true;
+                }
+            }
+            case SELL:{
+                if(this.getPrice().compareTo(targetOrder.getPrice())>=0){
+                    isCompatiblePrice = true;
+                }
+            }
+        }
+        return this.orderType!=targetOrder.orderType &&
+                this.currencyPair.equals(targetOrder.currencyPair) &&
+                isCompatiblePrice &&
+                this.client.getId()!=targetOrder.client.getId();
+
     }
 
     public void reduce(BigDecimal amount, BigDecimal price) {
@@ -121,6 +142,8 @@ public class Order {
     public BigDecimal getPrice() {
         return price;
     }
+
+    public OrderStatus getOrderStatus(){return orderStatus;}
 
     @Override
     public boolean equals(Object o) {
