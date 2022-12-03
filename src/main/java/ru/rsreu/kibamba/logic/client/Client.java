@@ -12,29 +12,29 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Client {
     private final int id;
-    private final Map<Currency, BigDecimal> balance;
+    private final Map<Currency, BigDecimal> assets;
 
     public Client(int id){
         this.id = id;
-        this.balance = initBalance();
+        this.assets = initAssets();
     }
-    private Map<Currency, BigDecimal> initBalance(){
-        Map<Currency, BigDecimal> balance = new ConcurrentHashMap<>(Currency.values().length);
+    private Map<Currency, BigDecimal> initAssets(){
+        Map<Currency, BigDecimal> assets = new ConcurrentHashMap<>(Currency.values().length);
         for (Currency currency : Currency.values()) {
-            balance.put(currency, BigDecimal.valueOf(BigDecimal.ZERO.doubleValue())
+            assets.put(currency, BigDecimal.valueOf(BigDecimal.ZERO.doubleValue())
                     .setScale(CurrencyWorker.CURRENCY_SCALE,CurrencyWorker.CURRENCY_ROUNDING_MODE));
         }
-        return balance;
+        return assets;
     }
     synchronized public void deposit(Currency currency, BigDecimal amount) {
-        BigDecimal currentBalance = balance.get(currency);
+        BigDecimal currentBalance = assets.get(currency);
         BigDecimal newBalance = currentBalance.add(amount)
                 .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-        balance.put(currency, newBalance);
+        assets.put(currency, newBalance);
     }
 
     synchronized public void withdraw(Currency currency, BigDecimal amount){
-            BigDecimal currentBalance = balance.get(currency);
+            BigDecimal currentBalance = assets.get(currency);
             if (currentBalance
                     .compareTo(amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE)) < 0) {
                 throw new InsufficientBalance(
@@ -45,37 +45,42 @@ public class Client {
                         currency));
             }
             BigDecimal restBalance = currentBalance.subtract(amount).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            balance.put(currency, restBalance);
+            assets.put(currency, restBalance);
     }
 
-    synchronized public void buy(CurrencyPairs currencyPairs, BigDecimal amount, BigDecimal priceRightLeftCurrency){
-            BigDecimal leftCurrencyBalance = balance.get(currencyPairs.getLeftCurrency());
-            BigDecimal leftCurrencyAmountPaid = amount.multiply(priceRightLeftCurrency)
+    synchronized public BigDecimal getMaxLeftCurrencyToBuy(CurrencyPairs currencyPairs, BigDecimal price){
+        return assets.get(currencyPairs.getRightCurrency())
+                .divide(price,CurrencyWorker.CURRENCY_SCALE,CurrencyWorker.CURRENCY_ROUNDING_MODE)
+                .setScale(CurrencyWorker.CURRENCY_SCALE,CurrencyWorker.CURRENCY_ROUNDING_MODE);
+    }
+    synchronized public void buy(CurrencyPairs currencyPairs, BigDecimal amountLeftCurrency, BigDecimal priceLeftToRightCurrency){
+            BigDecimal leftCurrencyBalance = assets.get(currencyPairs.getLeftCurrency());
+            BigDecimal rightBalance = assets.get((currencyPairs.getRightCurrency()));
+            BigDecimal rightBalanceCurrencyToPaid = amountLeftCurrency.multiply(priceLeftToRightCurrency)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            BigDecimal newLeftCurrencyBalance = leftCurrencyBalance.subtract(leftCurrencyAmountPaid)
+            BigDecimal newLeftCurrencyBalance = leftCurrencyBalance.add(amountLeftCurrency)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            BigDecimal rightBalance = balance.get((currencyPairs.getRightCurrency()));
-            BigDecimal newRightCurrencyBalance = rightBalance.add(amount)
+            BigDecimal newRightCurrencyBalance = rightBalance.subtract(rightBalanceCurrencyToPaid)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            balance.put(currencyPairs.getRightCurrency(),newRightCurrencyBalance);
-            balance.put(currencyPairs.getLeftCurrency(),newLeftCurrencyBalance);
+            assets.put(currencyPairs.getRightCurrency(),newRightCurrencyBalance);
+            assets.put(currencyPairs.getLeftCurrency(),newLeftCurrencyBalance);
 
     }
-    synchronized public void sel(CurrencyPairs currencyPairs, BigDecimal amount, BigDecimal priceLeftRightCurrency){
-            BigDecimal leftCurrencyBalance = balance.get(currencyPairs.getLeftCurrency());
-            BigDecimal newLeftCurrencyBalance = leftCurrencyBalance.subtract(amount)
+    synchronized public void sel(CurrencyPairs currencyPairs, BigDecimal amountLeftCurrency, BigDecimal priceLeftToRightCurrency){
+            BigDecimal leftCurrencyBalance = assets.get(currencyPairs.getLeftCurrency());
+            BigDecimal rightCurrencyBalance = assets.get(currencyPairs.getRightCurrency());
+            BigDecimal newLeftCurrencyBalance = leftCurrencyBalance.subtract(amountLeftCurrency)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            BigDecimal rightCurrencyBalance = balance.get(currencyPairs.getRightCurrency());
-            BigDecimal rightCurrencyAmountPaid = amount.multiply(priceLeftRightCurrency)
+            BigDecimal rightCurrencyAmountPurchased = amountLeftCurrency.multiply(priceLeftToRightCurrency)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            BigDecimal newRightCurrencyBalance = rightCurrencyBalance.add(rightCurrencyAmountPaid)
+            BigDecimal newRightCurrencyBalance = rightCurrencyBalance.add(rightCurrencyAmountPurchased)
                     .setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-            balance.put(currencyPairs.getRightCurrency(),newRightCurrencyBalance);
-            balance.put(currencyPairs.getLeftCurrency(),newLeftCurrencyBalance);
+            assets.put(currencyPairs.getRightCurrency(),newRightCurrencyBalance);
+            assets.put(currencyPairs.getLeftCurrency(),newLeftCurrencyBalance);
     }
 
-    public Map<Currency, BigDecimal> getBalance() {
-        return new HashMap<>(this.balance);
+    public Map<Currency, BigDecimal> getAssets() {
+        return new HashMap<>(this.assets);
     }
     public int getId() {
         return id;

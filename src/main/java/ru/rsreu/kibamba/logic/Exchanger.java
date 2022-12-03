@@ -1,7 +1,7 @@
 package ru.rsreu.kibamba.logic;
 
-import ru.rsreu.kibamba.exception.IncompatibleOrder;
 import ru.rsreu.kibamba.logic.Order.Order;
+import ru.rsreu.kibamba.logic.Order.OrderStatus;
 import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
 
 import java.math.BigDecimal;
@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Exchanger {
 
@@ -22,97 +23,61 @@ public class Exchanger {
         }
     }
 
-    public void addOrder(Order order) {
-        synchronized (order.getCurrencyPair()) {
-            List<Order> clientOrders = orders.get(order.getCurrencyPair())
-                    .stream().collect(Collectors.toList());
-            clientOrders.forEach(orderCandidate -> {
-                BigDecimal dealAmount = orderCandidate.getAmount().min(order.getAmount());
-                BigDecimal dealPrice = getDealPrice(order, orderCandidate);
-
-                if (reduceOrder(orderCandidate, dealAmount, dealPrice)) {
-                    closeOrder(orderCandidate);
+    public void addOrder(Order incomingOrder) {
+        synchronized (incomingOrder.getCurrencyPair()) {
+            AtomicBoolean thereIsEqualOrder = new AtomicBoolean(false);
+            AtomicReference<Order> foundTargetOrder = new AtomicReference<>(null);
+            List<Order> targetOrders = orders.get(incomingOrder.getCurrencyPair());
+            targetOrders.forEach(targetOrder -> {
+                if (incomingOrder.compatibleWith(targetOrder)) {
+                    closeOrders(incomingOrder, targetOrder);
+                    foundTargetOrder.set(targetOrder);
                 }
-                if (reduceOrder(order, dealAmount, dealPrice)) {
-                    order.revoke();
+                if (!thereIsEqualOrder.get()) {
+                    thereIsEqualOrder.set(incomingOrder.equals(targetOrder));
                 }
             });
-
-            if (order.getAmount().compareTo(BigDecimal.ZERO) > 0) {
-                orders.get(order.getCurrencyPair()).add(order);
+            if (incomingOrder.getOrderStatus() == OrderStatus.OPENED && !thereIsEqualOrder.get()) {
+                orders.get(incomingOrder.getCurrencyPair()).add(incomingOrder);
+            }
+            if (foundTargetOrder.get() != null) {
+                removeOrders(incomingOrder, foundTargetOrder.get());
             }
         }
+
     }
 
-    public List<Order> getAllOrdersList() {
+    public void closeOrders(Order incomingOrder, Order targetOrder) {
+        BigDecimal dealPrice = targetOrder.getPrice();
+        CurrencyPairs dealCurrencyPair = targetOrder.getCurrencyPair();
+        BigDecimal dealAmount = targetOrder.getAmount();
+        switch (targetOrder.getOrderType()) {
+            case BUY: {
+                targetOrder.getClient().buy(dealCurrencyPair,
+                        dealAmount, dealPrice);
+                incomingOrder.getClient().sel(dealCurrencyPair, dealAmount, dealPrice);
+                break;
+            }
+            case SELL: {
+                targetOrder.getClient().sel(dealCurrencyPair, dealAmount, dealPrice);
+                incomingOrder.getClient().buy(dealCurrencyPair, dealAmount, dealPrice);
+                break;
+            }
+        }
+        incomingOrder.setOrderStatus(OrderStatus.CLOSED);
+        targetOrder.setOrderStatus(OrderStatus.CLOSED);
+
+    }
+
+    private void removeOrders(Order incomingOrder, Order targetOrder) {
+        orders.get(incomingOrder.getCurrencyPair()).remove(incomingOrder);
+        orders.get(targetOrder.getCurrencyPair()).remove(targetOrder);
+    }
+
+    public List<Order> getOpenedOrders() {
         List<Order> allOrderList = new ArrayList<>();
         orders.values().forEach(allOrderList::addAll);
         return allOrderList;
-    }
-
-    public void revokeAllOrders() {
-        getAllOrdersList().forEach(Order::revoke);
-        orders.values().forEach(List::clear);
-    }
-
-    private boolean filterByClient(Order orderTarget, Order orderCandidate) {
-        return orderCandidate.getClient().getId() != orderTarget.getClient().getId();
-    }
-
-    private boolean filterByType(Order orderTarget, Order orderCandidate) {
-        return !orderCandidate.getOrderType().equals(orderTarget.getOrderType());
-    }
-
-    private boolean filterByPrice(Order orderTarget, Order orderCandidate) {
-        switch (orderTarget.getOrderType()) {
-            case BUY: {
-                return orderTarget.getPrice().compareTo(orderCandidate.getPrice()) >= 0;
-            }
-            case SELL: {
-                return orderTarget.getPrice().compareTo(orderCandidate.getPrice()) <= 0;
-            }
-            default: {
-                throw new IncompatibleOrder();
-            }
-        }
-    }
-
-    private int compareOrdersForSorting(Order order1, Order order2, Order orderTarget) {
-        switch (orderTarget.getOrderType()) {
-            case BUY: {
-                return order1.getPrice().compareTo(order2.getPrice());
-            }
-            case SELL: {
-                return (-1) * order1.getPrice().compareTo(order2.getPrice());
-            }
-            default: {
-                throw new IncompatibleOrder();
-            }
-        }
-    }
-
-    private BigDecimal getDealPrice(Order orderTarget, Order orderCandidate) {
-        switch (orderTarget.getOrderType()) {
-            case BUY: {
-                return orderTarget.getPrice().min(orderCandidate.getPrice());
-            }
-            case SELL: {
-                return orderTarget.getPrice().max(orderCandidate.getPrice());
-            }
-            default: {
-                throw new IncompatibleOrder();
-            }
-        }
-    }
-
-    private boolean reduceOrder(Order order, BigDecimal amount, BigDecimal price) {
-        order.reduce(amount, price);
-        return order.getAmount().compareTo(BigDecimal.ZERO) == 0;
-    }
-
-    private void closeOrder(Order order) {
-        order.revoke();
-        orders.get(order.getCurrencyPair()).remove(order);
     }
 
 }
