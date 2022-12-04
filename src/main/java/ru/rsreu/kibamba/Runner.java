@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 
 public class Runner {
     public static void main(String[] args) {
-        Exchanger exchanger = new Exchanger();
+       Exchanger exchanger = new Exchanger();
         Client seller = new Client(1);
         seller.deposit(Currency.USD,new BigDecimal(50));
         Client buyer = new Client(2);
@@ -25,7 +25,5 @@ public class Runner {
         exchanger.addOrder(orderSelUSDGetRUB);
         exchanger.addOrder(orderSelUSDGetRUB2);
         exchanger.addOrder(orderBuyUSDWithRUB);
-
-
     }
 }
