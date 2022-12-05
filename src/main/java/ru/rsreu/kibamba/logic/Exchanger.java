@@ -5,46 +5,88 @@ import ru.rsreu.kibamba.logic.Order.OrderStatus;
 import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Exchanger {
 
     private final Map<CurrencyPairs, List<Order>> orders;
+    private final BlockingQueue<Order> orderBlockingQueue;
+    private final Map<CurrencyPairs, BlockingQueue<Order>> orderBlockingQueueMap;
 
     public Exchanger() {
         this.orders = new ConcurrentHashMap<>(CurrencyPairs.values().length);
+        this.orderBlockingQueueMap = new HashMap<>();
         for (CurrencyPairs currencyPair : CurrencyPairs.values()) {
             orders.put(currencyPair, new ArrayList<>());
+            orderBlockingQueueMap.put(currencyPair,new LinkedBlockingQueue<>());
         }
+        this.orderBlockingQueue = new LinkedBlockingQueue<>();
+        consumeOrder();
     }
 
-    public void addOrder(Order incomingOrder) {
-        synchronized (incomingOrder.getCurrencyPair()) {
-            AtomicBoolean thereIsEqualOrder = new AtomicBoolean(false);
-            AtomicReference<Order> foundTargetOrder = new AtomicReference<>(null);
-            List<Order> targetOrders = orders.get(incomingOrder.getCurrencyPair());
-            targetOrders.forEach(targetOrder -> {
-                if (incomingOrder.compatibleWith(targetOrder)) {
-                    closeOrders(incomingOrder, targetOrder);
-                    foundTargetOrder.set(targetOrder);
+    private void produceOrder(Order incomingOrder) {
+            orderBlockingQueue.add(incomingOrder);
+    }
+
+    private void consumeOrder() {
+        Thread thread = new Thread(() -> {
+            while (true) {
+                try {
+                    Order order = orderBlockingQueue.take();
+                    orderBlockingQueueMap.get(order.getCurrencyPair()).add(order);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                if (!thereIsEqualOrder.get()) {
-                    thereIsEqualOrder.set(incomingOrder.equals(targetOrder));
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+
+        Map<CurrencyPairs, Thread> currencyPairsThreadMap = new HashMap<>();
+        for(Map.Entry<CurrencyPairs,BlockingQueue<Order>> entry:orderBlockingQueueMap.entrySet()){
+            Thread t = new Thread(()->{
+                while (true){
+                    try{
+                        Order order = entry.getValue().take();
+                        processesOrders(order);
+                    }catch (InterruptedException e){
+                        e.printStackTrace();
+                    }
                 }
             });
-            if (incomingOrder.getOrderStatus() == OrderStatus.OPENED && !thereIsEqualOrder.get()) {
-                orders.get(incomingOrder.getCurrencyPair()).add(incomingOrder);
-            }
-            if (foundTargetOrder.get() != null) {
-                removeOrders(incomingOrder, foundTargetOrder.get());
-            }
+            t.setDaemon(true);
+            currencyPairsThreadMap.put(entry.getKey(),t);
         }
+        currencyPairsThreadMap.values().forEach(Thread::start);
+    }
 
+    private void processesOrders(Order incomingOrder){
+        AtomicBoolean thereIsEqualOrder = new AtomicBoolean(false);
+        AtomicReference<Order> foundTargetOrder = new AtomicReference<>(null);
+        List<Order> targetOrders = orders.get(incomingOrder.getCurrencyPair());
+        targetOrders.forEach(targetOrder -> {
+            if (incomingOrder.compatibleWith(targetOrder)) {
+                closeOrders(incomingOrder, targetOrder);
+                foundTargetOrder.set(targetOrder);
+            }
+            if (!thereIsEqualOrder.get()) {
+                thereIsEqualOrder.set(incomingOrder.equals(targetOrder));
+            }
+        });
+        if (incomingOrder.getOrderStatus() == OrderStatus.OPENED && !thereIsEqualOrder.get()) {
+            orders.get(incomingOrder.getCurrencyPair()).add(incomingOrder);
+        }
+        if (foundTargetOrder.get() != null) {
+            removeOrders(incomingOrder, foundTargetOrder.get());
+        }
+    }
+    public void addOrder(Order incomingOrder) {
+        produceOrder(incomingOrder);
     }
 
     public void closeOrders(Order incomingOrder, Order targetOrder) {
@@ -72,12 +114,15 @@ public class Exchanger {
     private void removeOrders(Order incomingOrder, Order targetOrder) {
         orders.get(incomingOrder.getCurrencyPair()).remove(incomingOrder);
         orders.get(targetOrder.getCurrencyPair()).remove(targetOrder);
+        orderBlockingQueue.remove(incomingOrder);
+        orderBlockingQueue.remove(targetOrder);
     }
 
     public List<Order> getOpenedOrders() {
-        List<Order> allOrderList = new ArrayList<>();
-        orders.values().forEach(allOrderList::addAll);
-        return allOrderList;
+        Set<Order> allOrderSet = new HashSet<>();
+        allOrderSet.addAll(orderBlockingQueue);
+        orders.values().forEach(allOrderSet::addAll);
+        return new ArrayList<>(allOrderSet);
     }
 
 }
