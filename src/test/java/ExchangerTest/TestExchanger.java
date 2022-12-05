@@ -238,8 +238,10 @@ public class TestExchanger {
                     latch.await();
                     Order buyUSDOrEURWithRUB = new Order(firstClient, currencyPairsArray[new Random().nextInt(2)],
                             OrderType.BUY, new BigDecimal(90), new BigDecimal(new Random().nextInt(5) + 60));
-                    Order selUSDGetRUB = new Order(secondClient, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(90), new BigDecimal(new Random().nextInt(3) + 60));
-                    Order selEURGetRUB = new Order(thirdClient, CurrencyPairs.EUR_RUB, OrderType.SELL, new BigDecimal(90), new BigDecimal(new Random().nextInt(5) + 61));
+                    Order selUSDGetRUB = new Order(secondClient, CurrencyPairs.USD_RUB, OrderType.SELL, new BigDecimal(90),
+                            new BigDecimal(new Random().nextInt(3) + 60));
+                    Order selEURGetRUB = new Order(thirdClient, CurrencyPairs.EUR_RUB, OrderType.SELL, new BigDecimal(90),
+                            new BigDecimal(new Random().nextInt(5) + 61));
                     exchanger.addOrder(buyUSDOrEURWithRUB);
                     exchanger.addOrder(selEURGetRUB);
                     exchanger.addOrder(selUSDGetRUB);
@@ -258,7 +260,7 @@ public class TestExchanger {
                     latch.await();
                     firstClient.deposit(Currency.EUR, new BigDecimal(150));
                     firstClient.deposit(Currency.USD,new BigDecimal(150));
-                    secondClient.deposit(Currency.USD, new BigDecimal(7000));
+                    secondClient.deposit(Currency.RUB, new BigDecimal(7000));
                     thirdClient.deposit(Currency.RUB, new BigDecimal(7000));
                     Order buyUSDWithRUB = new Order(secondClient, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(90), new BigDecimal(new Random().nextInt(3) + 58));
                     Order selUSDOrEURGetRUB = new Order(firstClient, currencyPairsArray[new Random().nextInt(2)], OrderType.SELL, new BigDecimal(90), new BigDecimal(new Random().nextInt(4) + 61));

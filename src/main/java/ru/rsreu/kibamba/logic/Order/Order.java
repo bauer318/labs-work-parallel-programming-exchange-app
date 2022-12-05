@@ -14,7 +14,6 @@ public class Order {
     private final OrderType orderType;
     private OrderStatus orderStatus;
     private BigDecimal amount;
-    private BigDecimal deposit;
     private final BigDecimal price;
 
     public Order(Client client, CurrencyPairs currencyPair, OrderType orderType, BigDecimal amount, BigDecimal price) {
@@ -82,44 +81,6 @@ public class Order {
     private boolean secondOrderCanBuyWithTargetPrice(Order target){
         BigDecimal maxAmountCanBuy = this.client.getMaxLeftCurrencyToBuy(target.currencyPair,target.price);
         return maxAmountCanBuy.compareTo(this.amount)>=0;
-    }
-
-    public void reduce(BigDecimal amount, BigDecimal price) {
-        if (this.amount.compareTo(amount.setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE)) < 0) {
-            throw new InsufficientBalance(String.format("Cannot withdraw order for %s. Current amount is %s", amount, this.amount));
-        }
-        BigDecimal newAmount = this.amount.subtract(amount).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-        this.amount = newAmount;
-        BigDecimal dealPrice = amount.multiply(price).setScale(CurrencyWorker.CURRENCY_SCALE, CurrencyWorker.CURRENCY_ROUNDING_MODE);
-        switch (orderType) {
-            case BUY: {
-                client.deposit(currencyPair.getLeftCurrency(), amount);
-                BigDecimal newDeposit = deposit.subtract(dealPrice);
-                this.deposit = newDeposit;
-                break;
-            }
-            case SELL: {
-                client.deposit(currencyPair.getRightCurrency(), dealPrice);
-                break;
-            }
-        }
-    }
-    public void revoke() {
-        switch (orderType) {
-            case BUY: {
-                if (deposit.compareTo(BigDecimal.ZERO) > 0) {
-                    client.deposit(currencyPair.getRightCurrency(), deposit);
-                    this.deposit = BigDecimal.ZERO;
-                }
-                break;
-            }
-            case SELL: {
-                if (amount.compareTo(BigDecimal.ZERO) > 0) {
-                    client.deposit(currencyPair.getLeftCurrency(), amount);
-                }
-                break;
-            }
-        }
     }
 
     public Client getClient() {
