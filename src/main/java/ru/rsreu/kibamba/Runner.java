@@ -22,8 +22,8 @@ public class Runner {
                 OrderType.SELL,new BigDecimal(50),new BigDecimal("62.5"));
         Order orderSelUSDGetRUB2 = new Order(seller,CurrencyPairs.USD_RUB,
                 OrderType.SELL,new BigDecimal(50),new BigDecimal("63.5"));
-        exchanger.addOrder(orderSelUSDGetRUB);
-        exchanger.addOrder(orderSelUSDGetRUB2);
-        exchanger.addOrder(orderBuyUSDWithRUB);
+        exchanger.addOrders(orderSelUSDGetRUB);
+        exchanger.addOrders(orderSelUSDGetRUB2);
+        exchanger.addOrders(orderBuyUSDWithRUB);
     }
 }

@@ -32,6 +32,17 @@ public class Exchanger {
     private void produceOrder(Order incomingOrder) {
             orderBlockingQueue.add(incomingOrder);
     }
+    public void addOrders(Order...orders){
+        List<Thread> threads = new ArrayList<>();
+        for(int i=0; i<orders.length;i++){
+            int finalI = i;
+            Thread t = new Thread(()->{
+                produceOrder(orders[finalI]);
+            });
+            threads.add(t);
+        }
+        threads.forEach(Thread::start);
+    }
 
     private void consumeOrder() {
         Thread thread = new Thread(() -> {
@@ -85,9 +96,7 @@ public class Exchanger {
             removeOrders(incomingOrder, foundTargetOrder.get());
         }
     }
-    public void addOrder(Order incomingOrder) {
-        produceOrder(incomingOrder);
-    }
+
 
     public void closeOrders(Order incomingOrder, Order targetOrder) {
         BigDecimal dealPrice = targetOrder.getPrice();

@@ -12,8 +12,6 @@ import ru.rsreu.kibamba.logic.currency.Currency;
 import ru.rsreu.kibamba.logic.currency.CurrencyPairs;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
@@ -77,16 +75,16 @@ public class TestExchanger {
                 OrderType.SELL, new BigDecimal(50), new BigDecimal("62.5"));
         Order secondOrderBuyUSDWithRUB = new Order(buyer, CurrencyPairs.USD_RUB, OrderType.BUY,
                 new BigDecimal(50), new BigDecimal(60));
-        exchanger.addOrder(orderSelUSDGetRUB);
-        exchanger.addOrder(orderSelUSDGetRUB);
+        exchanger.addOrders(orderSelUSDGetRUB);
+        exchanger.addOrders(orderSelUSDGetRUB);
         sleep(100);
         Assertions.assertEquals(1, exchanger.getOpenedOrders().size());
-        exchanger.addOrder(firstOrderBuyUSDWithRUB);
+        exchanger.addOrders(firstOrderBuyUSDWithRUB);
         sleep(100);
         Assertions.assertEquals(0, exchanger.getOpenedOrders().size());
         firstOrderBuyUSDWithRUB.setOrderStatus(OrderStatus.OPENED);
-        exchanger.addOrder(firstOrderBuyUSDWithRUB);
-        exchanger.addOrder(secondOrderBuyUSDWithRUB);
+        exchanger.addOrders(firstOrderBuyUSDWithRUB);
+        exchanger.addOrders(secondOrderBuyUSDWithRUB);
         sleep(100);
         Assertions.assertEquals(2, exchanger.getOpenedOrders().size());
     }
@@ -106,7 +104,7 @@ public class TestExchanger {
         Runnable addSelOrder = () -> {
             try {
                 latch.await();
-                exchanger.addOrder(orderSelEURGetCHF);
+                exchanger.addOrders(orderSelEURGetCHF);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -114,7 +112,7 @@ public class TestExchanger {
         Runnable addBuyOrder = () -> {
             try {
                 latch.await();
-                exchanger.addOrder(orderBuyEURWithCHF);
+                exchanger.addOrders(orderBuyEURWithCHF);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -164,7 +162,7 @@ public class TestExchanger {
         Runnable addFirstSelOrder = () -> {
             try {
                 latch.await();
-                exchanger.addOrder(firstSelOrder);
+                exchanger.addOrders(firstSelOrder);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -172,7 +170,7 @@ public class TestExchanger {
         Runnable addSecondSelOrder = () -> {
             try {
                 latch.await();
-                exchanger.addOrder(secondSelOrder);
+                exchanger.addOrders(secondSelOrder);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -180,7 +178,7 @@ public class TestExchanger {
         Runnable addFirstBuyOrder = () -> {
             try {
                 latch.await();
-                exchanger.addOrder(firstOrderBuy);
+                exchanger.addOrders(firstOrderBuy);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -188,7 +186,7 @@ public class TestExchanger {
         Runnable addSecondBuyOrder = () -> {
             try {
                 latch.await();
-                exchanger.addOrder(secondBuyOrder);
+                exchanger.addOrders(secondBuyOrder);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -242,9 +240,7 @@ public class TestExchanger {
                             new BigDecimal(new Random().nextInt(3) + 60));
                     Order selEURGetRUB = new Order(thirdClient, CurrencyPairs.EUR_RUB, OrderType.SELL, new BigDecimal(90),
                             new BigDecimal(new Random().nextInt(5) + 61));
-                    exchanger.addOrder(buyUSDOrEURWithRUB);
-                    exchanger.addOrder(selEURGetRUB);
-                    exchanger.addOrder(selUSDGetRUB);
+                    exchanger.addOrders(buyUSDOrEURWithRUB,selEURGetRUB,selUSDGetRUB);
                     firstClient.deposit(Currency.RUB, new BigDecimal(7000));
                     secondClient.deposit(Currency.USD, new BigDecimal(150));
                     thirdClient.deposit(Currency.EUR, new BigDecimal(150));
@@ -265,9 +261,7 @@ public class TestExchanger {
                     Order buyUSDWithRUB = new Order(secondClient, CurrencyPairs.USD_RUB, OrderType.BUY, new BigDecimal(90), new BigDecimal(new Random().nextInt(3) + 58));
                     Order selUSDOrEURGetRUB = new Order(firstClient, currencyPairsArray[new Random().nextInt(2)], OrderType.SELL, new BigDecimal(90), new BigDecimal(new Random().nextInt(4) + 61));
                     Order buyEURWithRUB = new Order(thirdClient, CurrencyPairs.EUR_RUB, OrderType.BUY, new BigDecimal(90), new BigDecimal(new Random().nextInt(5) + 57));
-                    exchanger.addOrder(buyUSDWithRUB);
-                    exchanger.addOrder(buyEURWithRUB);
-                    exchanger.addOrder(selUSDOrEURGetRUB);
+                    exchanger.addOrders(buyUSDWithRUB,buyEURWithRUB,selUSDOrEURGetRUB);
                 }catch (InterruptedException e){
                     e.printStackTrace();
                 }
