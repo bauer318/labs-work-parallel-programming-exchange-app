@@ -32,6 +32,10 @@ public class Exchanger {
     private void produceOrder(Order incomingOrder) {
             orderBlockingQueue.add(incomingOrder);
     }
+    /*
+    * Not necessarily with multiple threads.
+    * We can do it with a single thread.
+    * */
     public void addOrders(Order...orders){
         List<Thread> threads = new ArrayList<>();
         for(int i=0; i<orders.length;i++){
@@ -49,6 +53,12 @@ public class Exchanger {
             while (true) {
                 try {
                     Order order = orderBlockingQueue.take();
+                    /*Instead of processing each currency pair with its thread,
+                    we can put one thread for even orders and another for odd ones.
+                    We could then do processesOrders(order) without
+                    orderBlockingQueueMap.get(order.getCurrencyPair()).add(order); and  code from
+                    67th line to 83
+                    */
                     orderBlockingQueueMap.get(order.getCurrencyPair()).add(order);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
